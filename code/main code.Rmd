@@ -1,0 +1,242 @@
+---
+title: "Exploratory Analysis"
+author: "Sonali Pednekar"
+output: 
+  html_document:
+    figure_caption: yes
+    theme: 
+      bootswatch: united
+    toc: true
+    toc_float: true
+    highlight: tango
+    df_print: paged
+    section_divs : TRUE
+    runtime : Shiny
+---
+
+```{css, echo = FALSE}
+.list-group-item{
+  background-color: #F6F5F5;
+}
+body {
+  background-color: #F6F5F5;
+  color: black;
+  margin: 0;
+  min-height: 100%;
+  min-width: 100%;
+  font-family: 'Montserrat',sans-serif;
+  font-weight: 300;
+  font-size: 16px
+}
+
+p {
+  text-align: justify;
+  text-justify: inter-word;
+  line-height: 1.6;
+}
+
+h1{
+font-size: 30px
+}
+h2{
+font-size:26px
+}
+h3{
+font-size:24px
+}
+
+
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: #C8C6C6;
+  color: white;
+}
+
+.nav-pills li a{
+color = black
+}
+
+.nav-pills>li>a:hover, .nav-pills>li>a:focus, .nav-pills>li.active>a,     .nav-pills>li.active>a:hover, .nav-pills>li.active>a:focus{
+background-color: #C8C6C6;
+  color: white;
+}
+
+
+
+```
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+# Loading in the libraries
+library(tidyverse)
+library(janitor)
+library(sf)
+library(spData)
+library(skimr)
+#library(knitr)
+library(naniar)
+library(GGally)
+library(styler)
+library(ggpubr)
+library(gganimate)
+library(ggtext)
+library(data.table)
+library(grid)
+library(plotly)
+library(ggplot2)
+library("scales")
+library(igraph)
+library(networkD3)
+library(timeDate)
+library(ggiraph)
+library(ggridges)
+library(ggimage)
+library(lubridate)
+library(magick)
+library(dplyr)
+library(ggpubr)
+library(scales)
+library(ggalt)
+library(grid)
+```
+
+
+# Introduction
+This is an exploratory analysis report on one of the subpart of a National Security Agency Dataset. This report talks about the steps and the reasoning behind taking each step in depth.The analysis conducted tries to answer some questions revolving around the data and some of the visualizations are interactive for an intuitive feel. Through this analysis we try to understand the flow of contracts for a hypersonic missile development project under one company through a bottom up approach.
+
+
+# Data
+
+```{r, echo=FALSE, out.width="100%",fig.align="center"}
+knitr::include_graphics("Plots/intro.PNG")
+```
+
+As mentioned in the Introduction, this dataset is a subpart of a National Security Agency Dataset under their cyber Risk Project. The mains website displays the US Spending and the bifurcations and the original dataset of the Cyber Risk Project consists of different contracts and subcontracts for a creation of a product for the government. There are layers of departments handling the allocation of funds and for simplicity a distribution of the process is displayed below. The USA governmment body is divided into different departments which allocate their respective budget according to their respective usage. This project contains the data of the spendings of Deparment of Defence (DOD) for a contract of a hypersonic missile development. The distribution and company selection is then further handled by two other department DEFENSE ADVANCED RESEARCH PROJECTS AGENCY (DARPA) and DEFENSE CONTRACT MANAGEMENT AGENCY (DCMA). These departments choose external companies for their task, in our case we have the distribution of only one Awarded company (RAYTHEON COMPANY). The company then decided the allocation of it's subcontracts. So in this dataset we have the information of all the documentation of each bifurcation.     
+
+
+# Analysis
+
+## Sub Award Company 
+As mentioned in the Data section, we only have the information of one company and hence there is no point in conducting any analysis on the Awardee Company (RAYTHEON COMPANY). So we will deep dive into the analysis of the Sub Awarded Companies.
+
+### Description Type
+In this analysis I thought of following a bottom up approach, hence I started with the section that comes at the very last of the supply chain. It is important to understand how many Subawards were allocated for different tools. To display this in an interactive and informative format, tree map is used.
+```{r code1, warning=FALSE,echo=FALSE,include=FALSE}
+#Reading the data 
+olympics_raw <- read_csv("munged_avi.csv")
+olympics_raw <- clean_names(olympics_raw)
+
+
+#olympics_raw2 <- separate_rows(olympics_raw, subaward_description, sep = ",", convert = TRUE)
+
+
+count_num <- olympics_raw %>% count(subaward_description_list)
+
+
+```
+
+```{r plot1, fig.align = 'left', out.width = "100%",echo=FALSE,warning=FALSE}
+# add r code here for plot
+p <- plot_ly(
+  count_num,
+  labels = ~ subaward_description_list,
+  parents = NA,
+  border.col=c("#f6f5f5"),
+  values = ~ n,
+  type = 'treemap',
+  hovertemplate = "subaward_description_list: %{label}<br>Count: %{value}<extra></extra>"
+)
+
+p <- p %>% layout(treemapcolorway=c("#b22222","#fff347")) %>% layout(title = 'Tree Map of Sub-award Description Types<br>Hover to look at the number of contracts for each Description Type') 
+p
+```
+From this plot it can seen that the two dominating tool category is Firm Fixed Price and NRE - Other. Firm fixed price contract is a price that is not subject to any adjustment on the basis of the contractor's cost experience. It can be seen that Majority of the companies prefer a Firm fixed price contract. There are many service type under the Non - Recurring Engineering (NRE) contracts which mean that companies prefer to have a one-time cost for research, engineering,etc. The second majority tools is NRE - Other. 
+
+### Business Type
+After looking at the total distribution of the description type for each contracts, we look at the geographic distribution of Subcontracts and the distribution of the business types of the subcontracts in that selected state. 
+
+```{r, echo=FALSE, out.width="100%",fig.align="center"}
+htmltools::includeHTML("Plots/map_subcontracts.html")
+``` 
+Even though Raytheon (Awarded Company) is based in Arizona, a major chunk of the contracts are provided to the companies based in California. Interestingly, a lot of subcontracts are handed to companies based on the other coast. This just shows that there are integral businesses/materials available on the other coast and Raytheon is ready to incur the transportation and handling costs of the subcontracts. To find out more interesting insights, you could hover over the map or click on the map to filter the business type of the State. 
+
+### Top Sub Company by Money 
+Next we move on to monetory distribution of the subcontracts. In this plot only the sub contract companies with the majority funding is displayed.
+```{r, echo=FALSE, out.width="100%",fig.align="center"}
+knitr::include_graphics("Plots/money_plot.png")
+```
+From this graph, it can be inferred that ALLIANT TECHSYSTEMS OPERATIONS LLC has a whopping amount of funding from Raytheon. The value crosses 600M dollars and this might be the case because the maximum chunk of the expensive and heavy parts might be given to Alliant or they have the contract of majority number of small tools/products. The distribution of the other countries is not clearly visible because of the gap. 
+
+```{r code3, warning=FALSE,echo=FALSE,include=FALSE}
+olympics_raw <- read_csv("Dataset_Contract_Sub-Awards.csv")
+olympics_raw <- clean_names(olympics_raw)
+
+olympics_plot2 <- olympics_raw %>% select(subawardee_name,subaward_amount)
+
+olympics_plot3 <- olympics_plot2 %>% group_by(subawardee_name) %>% summarise(total_amount = sum(subaward_amount))
+
+olympics_plot4<-olympics_plot3 %>% arrange(desc(total_amount)) %>% head(10)
+
+
+olympics_plot4 <- olympics_plot4 %>% mutate( color_bar = case_when(
+  subawardee_name == "ALLIANT TECHSYSTEMS OPERATIONS LLC" ~ "one",
+  TRUE ~ "two"
+)
+)
+
+olympics_raw <- read_csv("munged_avi.csv")
+olympics_raw <- clean_names(olympics_raw)
+
+
+#trans = read.transactions("munged_avi.csv", format = "single",sep =",", cols = c("subawardee_name", "subaward_description_list"),header = TRUE)
+trans <- olympics_raw %>% select(subawardee_name,subaward_description_list,subaward_amount)
+trans <- trans %>% drop_na()
+
+trans1 <- olympics_plot4 %>% left_join(trans,by = "subawardee_name")
+
+
+
+
+# create a dataset:
+data <- data.frame(
+  from=trans1$subaward_description_list,
+  to=trans1$subawardee_name)
+  #weight = trans$subaward_amount)
+
+
+
+library(RColorBrewer)
+colourCount = length(unique(data$from))
+getPalette = colorRampPalette(brewer.pal(3, "Set2"))
+
+# Map the color to cylinders
+```
+
+### Top Sub Company by Distribution Type
+After finding out the top 10 companies with the highest funding, we move on to analyzing the connections between the companies and the products/tools provided by those companies through a network plot. 
+```{r plot3, fig.align = 'left', out.width = "100%",echo=FALSE,warning=FALSE}
+p <- simpleNetwork(data, height="100px", width="100px",linkColour = "red",fontSize = 12,
+                   opacity = 5,
+                   linkDistance = 500,
+                   nodeColour = "#650000",
+                   zoom = TRUE) # ability to zoom when click on the node
+p
+
+
+```
+Again through this network graph it can be established that ALLIANT TECHSYSTEMS OPERATIONS LLC has the most number of connections in this graph hence they provide the maximum number of services amongst the top 10. One part of the hypothesis mentioned above is proved through this graph that ALLIANT TECHSYSTEMS OPERATIONS LLC has the maximum number of products under their contract amongst the top 10. It can be said that ALLIANT TECHSYSTEMS OPERATIONS LLC is at a risk of cyber attack because of the extensive products the company provides.  
+
+### Top Sub Company by Business Type
+After looking at the connection of the top 10 companies with the tools or products that they provide, we move on to look at the monetory breakdown of the companies for each tool that is under their contract. These top 4 companies are selected on the basis of the maximum number of business type the company provides.
+```{r, echo=FALSE, out.width="100%",fig.align="center"}
+knitr::include_graphics("Plots/company_money.png")
+```
+Through this graph it can be seen that, as the rank of the company having the most number of business types increases, their funding for the product increases. Even though Tevet has the fourth maximum number of business types under it's wings,only two contracts are signed with the company. For the top most company,i.e, Port Electronics Corporation, it can be seen that it provides small tools Clamps and Washer as well as bigger tools such as Detonator and Initiator.
+
+#  Conclusion
+In conclusion, we got to understand the mechanics and procedure of how the money flows for a hypersonic missile development project under one department and company. We looked at the different business types that have signed the contract with the Awarded company and the tools or services that these companies provide. We also looked at the monetory and geographic distribution of these funds. For the future, we could look at the geographical impact on the distribution of products and deep dive into ALLIANT TECHSYSTEMS OPERATIONS LLC (most funded sub-contract company).
